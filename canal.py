@@ -35,24 +35,40 @@ available_show = {"A": "discrete",
                   "B": "boite", 
                   "C": "planquee", 
                   "G": "guignols", 
-                  "J": "petit",
+                  "J": "petit", 
                   "L": "petite", 
                   "M": "meteo", 
-                  "P": "pepites",   
+                  "P": "pepites", 
                   "R": "groland", 
                   "S": "sav", 
                   "T": "tele", 
                   "U": "salut", 
                   "Z": "zapping"}
-
-available_quality = {'high': 'HAUT_DEBIT', 'low': 'BAS_DEBIT'}
+nb_videos_show = {"discrete": 1,
+                  "boite": 1, 
+                  "planquee": 1, 
+                  "guignols": 1, 
+                  "petit": 3,
+                  "petite": 1, 
+                  "meteo": 1, 
+                  "pepites": 1, 
+                  "groland": 1, 
+                  "sav": 1, 
+                  "tele": 1, 
+                  "salut": 4, 
+                  "zapping": 1}
+available_quality = {'high': 'HAUT_DEBIT', 'low': 'BAS_DEBIT', 'hd': 'HD'}
 url_canal = "http://www.canalplus.fr/rest/bootstrap.php?/bigplayer/search/"
 URLdico = {}
 
 def buildURLdico(currentTvShow, nb_video, quality, verbose):
     #Get Dom file
     url= url_canal + currentTvShow
-    dom = minidom.parse(urlopen(url))
+    try:
+        dom = minidom.parse(urlopen(url))
+    except IOError:
+        print "Impossible te reach Canal+'s web site\nCheck your network"
+        exit(2)
     #Get the number of videos
     video_tags = dom.getElementsByTagName('VIDEO')
     if nb_video == 0:
@@ -60,7 +76,8 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
         nb_video = len(video_tags)
     else:
         #on va chercher le nombre de videos choisi "nb_video"
-        nb_video = min(len(video_tags), max(nb_video, 1))
+        nb_video = nb_videos_show[currentTvShow] *\
+        min(len(video_tags), max(nb_video, 1))
     if verbose:
         print "The following URLs have been found:"
     for node in video_tags[:nb_video]:
@@ -68,6 +85,10 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
         datenodelist = node.getElementsByTagName('DATE')
         hournodelist = node.getElementsByTagName('HEURE')
         debitnodelist = node.getElementsByTagName(available_quality[quality])
+        #For the HD case
+        if debitnodelist[0].firstChild is None:
+            print "There is no HD video, download the high quality instead"
+            debitnodelist = node.getElementsByTagName('HAUT_DEBIT')
         rubriquenodelist = node.getElementsByTagName('RUBRIQUE')
         video_rubrique= str(rubriquenodelist[0].firstChild.nodeValue).replace(' ','_')
         if datenodelist.length == debitnodelist.length and \
@@ -135,14 +156,14 @@ def downloadURL(url, verbose, overwrite, force, rename):
 
 def usage():
     print "-h: display help"
-    print "-o: force Overwritting for anyfiles"
+    print "-o: force overwritting for anyfiles"
     print "-v: verbose mode"
     print "-r: rename all downloaded files"
     print "-V: display the version information"
     print "-d: [directory] : path to where you store your tv show"
     print "-l: low quality videos"
     print "-f: try to create the directories hierarchy"
-    print "-n: [deep]: Number of requested broadcasts (0 means all, default is 1)"
+    print "-n: [deep]: number of requested broadcasts (0 means all, default is 1)"
     for option, name in available_show.items():
         print "-"+option+": download "+name
 
@@ -157,9 +178,9 @@ def main():
     global dest_directory
     #Get option and arguments
     try:
-        opts, args = getopt(argv[1:], "hvVrolf".join(available_show.keys())+"n:d:",
-        ["help", "verbose", "Version","rename-file", "number",
-        "directory", "low", "overwrite"])
+        opts, args = getopt(argv[1:], "hvVrof".join(available_show.keys())+"n:d:q:",
+        ["help", "verbose", "Version","rename-file", "overwrite", "force",
+        "number=", "directory=", "quality="])
     except GetoptError, err:
             # print help information and exit:
             print str(err) # will print something like "option -a not recognized"
@@ -180,8 +201,11 @@ def main():
         if o in ("-h", "--help"):
             usage()
             exit(0)
-        if o in ("-l"):
-            quality = 'low'
+        if o in ("-q", "--quality"):
+            if str(a) == 'l' or str(a) == 'low':
+                quality = 'low'
+            else:
+                quality = 'hd'
         if o in ("-o", "--overwrite"):
             overwrite = True
         if o in ("-v", "--verbose"):
