@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: iso-8859-1 -*-
 #**************************************************************************#
 #*     Copyright (C) 2009 by Renaud Guezennec                            #
 #*   http://renaudguezennec.homelinux.org/accueil,3.html                   #
@@ -29,7 +30,7 @@ from os.path import join, expanduser, exists
 from subprocess import Popen
 
 #global variables
-dest_directory = join(expanduser("~"), 'Canal_Download')
+dest_directory = join(expanduser("~"), join('Vidéos','Canal_Download'))
 available_show = {"A": "discrete",
                   "B": "boite", 
                   "C": "planquee", 
@@ -65,6 +66,7 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
     for node in video_tags[:nb_video]:
         #Read date, debit and rubrique for all video tag
         datenodelist = node.getElementsByTagName('DATE')
+        hournodelist = node.getElementsByTagName('HEURE')
         debitnodelist = node.getElementsByTagName(available_quality[quality])
         rubriquenodelist = node.getElementsByTagName('RUBRIQUE')
         video_rubrique= str(rubriquenodelist[0].firstChild.nodeValue).replace(' ','_')
@@ -74,6 +76,8 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
                 #Read video url and date
                 video_url=str(debitnodelist[0].firstChild.nodeValue)
                 video_date = makeDateISO(str(datevideo.firstChild.nodeValue))
+                video_hour = str(hournodelist[0].firstChild.nodeValue)
+                video_date = video_date+"_"+video_hour
                 if video_url.find("rtmp")>-1:
                     URLdico[video_url]=(video_date, video_rubrique)
                     if verbose:
@@ -88,7 +92,7 @@ def makeDateISO(madate):
     return '_'.join(madateISO)
 
 
-def downloadURL(url, verbose, overwrite,force):
+def downloadURL(url, verbose, overwrite, force, rename):
     item = URLdico[url]# consultaion URLdico
     video_date, video_rubrique = item[0], item[1]
     if not exists(join(dest_directory,video_rubrique)):
@@ -104,14 +108,21 @@ def downloadURL(url, verbose, overwrite,force):
             with -D option"
 
     #Generate the related command
-    file_address = join(dest_directory, video_rubrique, video_rubrique
+    file_address = ""
+    if rename:
+        file_address = join(dest_directory, video_rubrique, video_rubrique
         +"_"+video_date.replace('/', '_')+".flv")
+    else:
+        file_address = join(dest_directory, video_rubrique,
+        url.split('/').pop())
+
     cmd ="flvstreamer -eqr "+url+" -o "+file_address
     if verbose:
-        print '\t'+cmd
         cmd.replace('-eqr','-er') 
+        print '\t'+cmd
     #Check if we allow to overwrite
     if exists(file_address) and not overwrite:
+        #print file_address+" already exists"
         print video_rubrique+"_"+video_date.replace('/', '_')+".flv already exists"
     elif exists(file_address) and overwrite:
         #Remove file if we can overwrite
@@ -126,6 +137,7 @@ def usage():
     print "-h: display help"
     print "-o: force Overwritting for anyfiles"
     print "-v: verbose mode"
+    print "-r: rename all downloaded files"
     print "-V: display the version information"
     print "-d: [directory] : path to where you store your tv show"
     print "-l: low quality videos"
@@ -145,17 +157,20 @@ def main():
     global dest_directory
     #Get option and arguments
     try:
-        opts, args = getopt(argv[1:], "hvVolf".join(available_show.keys())+"n:d:",
-        ["help", "verbose", "Version", "number", "directory", "low"])
+        opts, args = getopt(argv[1:], "hvVrolf".join(available_show.keys())+"n:d:",
+        ["help", "verbose", "Version","rename-file", "number",
+        "directory", "low", "overwrite"])
     except GetoptError, err:
             # print help information and exit:
             print str(err) # will print something like "option -a not recognized"
             usage()
             exit(2)
+
     #Initiate parameters
     tvshow = []
     deep = 1
     overwrite = False
+    rename = False
     force = False
     verbose = False
     quality = 'high'
@@ -167,10 +182,12 @@ def main():
             exit(0)
         if o in ("-l"):
             quality = 'low'
-        if o in ("-o"):
+        if o in ("-o", "--overwrite"):
             overwrite = True
         if o in ("-v", "--verbose"):
             verbose = True
+        if o in ("-r", "--rename"):
+            rename = True
         if o in ("-d", "--directory"):
             dest_directory = a
         if o in ("-f", "--force"):
@@ -193,7 +210,7 @@ def main():
         try:
             buildURLdico(show, deep, quality, verbose)
             for url in URLdico:
-                downloadURL(url, verbose, overwrite,force)
+                downloadURL(url, verbose, overwrite, force, rename)
             URLdico.clear()
         except OSError:
             print "Error: flvstreamer is not installed,\
