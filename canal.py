@@ -80,7 +80,10 @@ def buildURLdico(currentTvShow, nb_video, quality):
     url= url_canal + currentTvShow.replace(' ','%20')
     print_dbg("XML URL: " + url)
     try:
-        dom = minidom.parse(urlopen(url))
+        xml = urlopen(url)
+#        print xml.read()
+        dom = minidom.parse(xml)
+        xml.close()
     except IOError:
         print_err("Unable to reach Canal+'s web site\nCheck your network")
         exit(2)
