@@ -149,13 +149,13 @@ def downloadURL(url, verbose, overwrite, force, rename):
             with --directory option.")
 
     #Generate the related command
-    file_address = ""
+    filename = ""
     if rename:
-        file_address = join(dest_directory, video_rubrique, video_rubrique
-        +"_"+video_date.replace('/', '_')+".flv")
+        fileext = url.split('.').pop()
+        filename = video_rubrique + "_" + video_date + "." + fileext
     else:
-        file_address = join(dest_directory, video_rubrique,
-        url.split('/').pop())
+        filename = url.split('/').pop()
+    destination = join(dest_directory, video_rubrique, filename)
 
     cmd ="flvstreamer -eqr "+url+" -o "+file_address
     if verbose:
