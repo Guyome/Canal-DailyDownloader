@@ -77,7 +77,8 @@ def print_err(msg):
 
 def buildURLdico(currentTvShow, nb_video, quality):
     #Get Dom file
-    url= url_canal + currentTvShow
+    url= url_canal + currentTvShow.replace(' ','%20')
+    print_dbg("XML URL: " + url)
     try:
         dom = minidom.parse(urlopen(url))
     except IOError:
