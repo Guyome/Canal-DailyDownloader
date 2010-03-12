@@ -107,7 +107,7 @@ def buildURLdico(currentTvShow, nb_video, quality):
         video_rubrique= str(rubriquenodelist[0].firstChild.nodeValue).replace(' ','_')
 
         if datenodelist.length == debitnodelist.length and \
-        video_rubrique.lower().find(currentTvShow.lower())>-1:
+        video_rubrique.lower().find(currentTvShow.lower().replace(' ','_'))>-1:
             for datevideo in datenodelist:
                 #Read video url and date
                 video_url=str(debitnodelist[0].firstChild.nodeValue)
