@@ -117,7 +117,9 @@ def buildURLdico(currentTvShow, nb_video, quality):
                 video_url=str(debitnodelist[0].firstChild.nodeValue)
                 video_date = makeDateISO(str(datevideo.firstChild.nodeValue))
                 video_hour = str(hournodelist[0].firstChild.nodeValue)
-                video_date = video_date+"_"+video_hour
+                video_hour = video_hour.replace(":", "h", 1)
+                video_hour = video_hour.replace(":", "m", 1)
+                video_date = video_date + "_" + video_hour
                 if video_url.find("rtmp")>-1:
                     URLdico[video_url]=(video_date, video_rubrique)
                     print_verbose(" + " + video_url)
@@ -128,7 +130,7 @@ def makeDateISO(madate):
     madateISO.append(b[2])
     madateISO.append(b[1])
     madateISO.append(b[0])
-    return '_'.join(madateISO)
+    return '-'.join(madateISO)
 
 
 def downloadURL(url, verbose, overwrite, force, rename):
