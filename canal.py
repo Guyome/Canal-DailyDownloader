@@ -28,12 +28,13 @@ from urllib import urlopen
 from os import remove, makedirs, waitpid, rename
 from os.path import join, expanduser, exists
 from subprocess import Popen
+import re
 
 #global variables
 debug = True
 verbose = False
 
-dest_directory = join(expanduser("~"), join('VidÃ©os','Canal_Download'))
+dest_directory = join(expanduser("~"), join('Vidéos','Canal_Download'))
 available_show = {"A": "discrete",
                   "B": "boite", 
                   "C": "planquee", 
@@ -116,28 +117,25 @@ def buildURLdico(currentTvShow, nb_video, quality):
         video_rubrique.lower().find(currentTvShow.lower().replace(' ','_'))>-1:
             for datevideo in datenodelist:
                 #Read video url and date
-                video_url=str(debitnodelist[0].firstChild.nodeValue)
-                video_date = makeDateISO(str(datevideo.firstChild.nodeValue))
-                video_hour = str(hournodelist[0].firstChild.nodeValue)
-                video_hour = video_hour.replace(":", "h", 1)
-                video_hour = video_hour.replace(":", "m", 1)
-                video_date = video_date + "_" + video_hour
+                video_url = str(debitnodelist[0].firstChild.nodeValue)
+                video_show_title = node.getElementsByTagName('TITRE')[0].firstChild.nodeValue
+                video_show_subtitle = node.getElementsByTagName('SOUS_TITRE')[0].firstChild.nodeValue
+                video_fulltitle = reformat_date_to_ISO(video_show_title) + " - " + reformat_date_to_ISO(video_show_subtitle)
                 if video_url.find("rtmp")>-1:
-                    URLdico[video_url]=(video_date, video_rubrique)
+                    URLdico[video_url]=(video_fulltitle, video_rubrique)
                     print_verbose(" + " + video_url)
 
-def makeDateISO(madate):
-    b=madate.split("/")
-    madateISO=[]
-    madateISO.append(b[2])
-    madateISO.append(b[1])
-    madateISO.append(b[0])
-    return '-'.join(madateISO)
+def reformat_date_to_ISO(string):
+    # Grand Journal, Zapping
+    ret = re.sub(r'(.*)(\d\d)/(\d\d)/(\d\d)(.*)', r'\g<1>20\g<4>-\g<3>-\g<2>\g<5>', string)
+    # Petite seamine
+    ret = re.sub(r'(.*)(\d\d)/(\d\d)(.*)', r'\g<1>2010-\g<3>-\g<2>\g<4>', ret)
+    return ret
 
 def process_vod(url, overwrite, force, rename):
     print_dbg("FLV URL: " + url)
     item = URLdico[url]# consultaion URLdico
-    video_date, video_rubrique = item[0], item[1]
+    video_fulltitle, video_rubrique = item[0], item[1]
     if not exists(join(dest_directory,video_rubrique)):
         if force:
             try:
@@ -154,7 +152,7 @@ def process_vod(url, overwrite, force, rename):
     filename = ""
     if rename:
         fileext = url.split('.').pop()
-        filename = video_rubrique + "_" + video_date + "." + fileext
+        filename = video_fulltitle + "." + fileext
     else:
         filename = url.split('/').pop()
     destination = join(dest_directory, video_rubrique, filename)
@@ -171,7 +169,7 @@ def process_vod(url, overwrite, force, rename):
         download_url(url, destination)
 
 def download_url(url, dest):
-    cmd = "flvstreamer -eqr " + url + " -o " + dest + ".incomplete"
+    cmd = "flvstreamer -eqr " + url + " -o " + dest.replace(" ", "\ ") + ".incomplete"
     if verbose:
         cmd = cmd.replace('-eqr','-er', 1) 
     if(execute(cmd) != 0):
