@@ -29,6 +29,7 @@ from os import remove, makedirs, waitpid, rename
 from os.path import join, expanduser, exists
 from subprocess import Popen
 import re
+import sys
 
 #global variables
 debug = True
