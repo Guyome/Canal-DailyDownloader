@@ -1,0 +1,111 @@
+From 7acb041fcc1030e4f95a4da1bb3e12c7275b6456 Mon Sep 17 00:00:00 2001
+From: neomilium <neomilium@gmail.com>
+Date: Sat, 13 Mar 2010 00:13:36 +0100
+Subject: [PATCH 1/8] New print_* functions:
+  - print_dbg(), print_err() and print_verbose() functions have been created in order to handle respectively debug, error and verbosed messages
+  - some print() functions have been replaced accordingly to their usage
+  - some messages have been worked
+
+---
+ canal.py |   36 ++++++++++++++++++++++++++----------
+ 1 files changed, 26 insertions(+), 10 deletions(-)
+
+diff --git a/canal.py b/canal.py
+index 52ad303..e001463 100755
+--- a/canal.py
++++ b/canal.py
+@@ -30,6 +30,9 @@ from os.path import join, expanduser, exists
+ from subprocess import Popen
+ 
+ #global variables
++debug = True
++verbose = False
++
+ dest_directory = join(expanduser("~"), join('Vidéos','Canal_Download'))
+ available_show = {"A": "discrete",
+                   "B": "boite", 
+@@ -61,13 +64,24 @@ available_quality = {'high': 'HAUT_DEBIT', 'low': 'BAS_DEBIT', 'hd': 'HD'}
+ url_canal = "http://www.canalplus.fr/rest/bootstrap.php?/bigplayer/search/"
+ URLdico = {}
+ 
+-def buildURLdico(currentTvShow, nb_video, quality, verbose):
++def print_dbg(msg):
++    if debug:
++        print "DBG: " + str(msg)
++
++def print_verbose(msg):
++    if verbose:
++        print str(msg)
++
++def print_err(msg):
++    print >> sys.stderr, str(msg)
++
++def buildURLdico(currentTvShow, nb_video, quality):
+     #Get Dom file
+     url= url_canal + currentTvShow
+     try:
+         dom = minidom.parse(urlopen(url))
+     except IOError:
+-        print "Impossible te reach Canal+'s web site\nCheck your network"
++        print_err("Unable to reach Canal+'s web site\nCheck your network")
+         exit(2)
+     #Get the number of videos
+     video_tags = dom.getElementsByTagName('VIDEO')
+@@ -78,8 +92,8 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
+         #on va chercher le nombre de videos choisi "nb_video"
+         nb_video = nb_videos_show[currentTvShow] *\
+         min(len(video_tags), max(nb_video, 1))
+-    if verbose:
+-        print "The following URLs have been found:"
++
++    print_verbose("The following URLs have been found:")
+     for node in video_tags[:nb_video]:
+         #Read date, debit and rubrique for all video tag
+         datenodelist = node.getElementsByTagName('DATE')
+@@ -91,6 +105,7 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
+             debitnodelist = node.getElementsByTagName('HAUT_DEBIT')
+         rubriquenodelist = node.getElementsByTagName('RUBRIQUE')
+         video_rubrique= str(rubriquenodelist[0].firstChild.nodeValue).replace(' ','_')
++
+         if datenodelist.length == debitnodelist.length and \
+         video_rubrique.lower().find(currentTvShow.lower())>-1:
+             for datevideo in datenodelist:
+@@ -101,8 +116,7 @@ def buildURLdico(currentTvShow, nb_video, quality, verbose):
+                 video_date = video_date+"_"+video_hour
+                 if video_url.find("rtmp")>-1:
+                     URLdico[video_url]=(video_date, video_rubrique)
+-                    if verbose:
+-                        print video_url
++                    print_verbose(" + " + video_url)
+ 
+ def makeDateISO(madate):
+     b=madate.split("/")
+@@ -121,12 +135,12 @@ def downloadURL(url, verbose, overwrite, force, rename):
+             try:
+                 makedirs(join(dest_directory,video_rubrique), mode=0755)
+             except OSError:
+-                print "CanalDailyDownloader can not make directory in this\
+-                location:"+dest_directory+"\nPlease, check permissions."
++                print_err("Unable to create directories in this\
++                location:"+dest_directory+"\nPlease, check permissions.")
+         else:
+-            print "The destination directory does not exist. Please,\
++            print_err("The destination directory does not exist. Please,\
+             use the -f option to force their creation or redefine the location\
+-            with -D option"
++            with --directory option.")
+ 
+     #Generate the related command
+     file_address = ""
+@@ -176,6 +190,8 @@ def version():
+ 
+ def main():
+     global dest_directory
++    global verbose
++
+     #Get option and arguments
+     try:
+         opts, args = getopt(argv[1:], "hvVrof".join(available_show.keys())+"n:d:q:",
+-- 
+1.6.3.3
+

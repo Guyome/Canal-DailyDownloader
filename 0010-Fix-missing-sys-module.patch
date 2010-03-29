@@ -1,0 +1,24 @@
+From 27eed575fc768032347b246fd74548e37c91719b Mon Sep 17 00:00:00 2001
+From: neomilium <neomilium@gmail.com>
+Date: Fri, 19 Mar 2010 12:11:05 +0100
+Subject: [PATCH 10/10] Fix missing sys module.
+
+---
+ canal.py |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/canal.py b/canal.py
+index 0b1d361..15b709a 100755
+--- a/canal.py
++++ b/canal.py
+@@ -29,6 +29,7 @@ from os import remove, makedirs, waitpid, rename
+ from os.path import join, expanduser, exists
+ from subprocess import Popen
+ import re
++import sys
+ 
+ #global variables
+ debug = True
+-- 
+1.6.3.3
+

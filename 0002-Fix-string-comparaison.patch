@@ -1,0 +1,26 @@
+From 86aeb24c58d1f40e227985bbfe3d71413a758a35 Mon Sep 17 00:00:00 2001
+From: neomilium <neomilium@gmail.com>
+Date: Sat, 13 Mar 2010 00:22:59 +0100
+Subject: [PATCH 2/8] Fix string comparaison:
+  - Theses strings was compared without the same cleaning method. (a.replace(" ", '_" != a)
+
+---
+ canal.py |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/canal.py b/canal.py
+index e001463..4918ce3 100755
+--- a/canal.py
++++ b/canal.py
+@@ -107,7 +107,7 @@ def buildURLdico(currentTvShow, nb_video, quality):
+         video_rubrique= str(rubriquenodelist[0].firstChild.nodeValue).replace(' ','_')
+ 
+         if datenodelist.length == debitnodelist.length and \
+-        video_rubrique.lower().find(currentTvShow.lower())>-1:
++        video_rubrique.lower().find(currentTvShow.lower().replace(' ','_'))>-1:
+             for datevideo in datenodelist:
+                 #Read video url and date
+                 video_url=str(debitnodelist[0].firstChild.nodeValue)
+-- 
+1.6.3.3
+

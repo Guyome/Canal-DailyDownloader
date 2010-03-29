@@ -1,0 +1,28 @@
+From ec480ea5934283da48acc7f08bae64e4c95a008e Mon Sep 17 00:00:00 2001
+From: neomilium <neomilium@gmail.com>
+Date: Sat, 13 Mar 2010 00:31:02 +0100
+Subject: [PATCH 4/8] Minor modification to ease debugging.
+
+---
+ canal.py |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/canal.py b/canal.py
+index a2dffb2..b4f0c4f 100755
+--- a/canal.py
++++ b/canal.py
+@@ -80,7 +80,10 @@ def buildURLdico(currentTvShow, nb_video, quality):
+     url= url_canal + currentTvShow.replace(' ','%20')
+     print_dbg("XML URL: " + url)
+     try:
+-        dom = minidom.parse(urlopen(url))
++        xml = urlopen(url)
++#        print xml.read()
++        dom = minidom.parse(xml)
++        xml.close()
+     except IOError:
+         print_err("Unable to reach Canal+'s web site\nCheck your network")
+         exit(2)
+-- 
+1.6.3.3
+
